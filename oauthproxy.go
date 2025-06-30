@@ -896,7 +896,7 @@ func (p *OAuthProxy) OAuthCallback(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	session, err := p.redeemCode(req, csrf.GetCodeVerifier())
+	session, err := p.redeemCode(req, csrf.GetCodeVerifier(), appRedirect)
 	if err != nil {
 		logger.Errorf("Error redeeming code during OAuth2 callback: %v", err)
 		p.ErrorPage(rw, req, http.StatusInternalServerError, err.Error())
@@ -949,7 +949,7 @@ func (p *OAuthProxy) OAuthCallback(rw http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (p *OAuthProxy) redeemCode(req *http.Request, codeVerifier string) (*sessionsapi.SessionState, error) {
+func (p *OAuthProxy) redeemCode(req *http.Request, codeVerifier string, appRedirect string) (*sessionsapi.SessionState, error) {
 	code := req.Form.Get("code")
 	if code == "" {
 		return nil, providers.ErrMissingCode
@@ -968,6 +968,8 @@ func (p *OAuthProxy) redeemCode(req *http.Request, codeVerifier string) (*sessio
 	if s.ExpiresOn == nil {
 		s.ExpiresIn(p.CookieOptions.Expire)
 	}
+
+	s.AppRedirect = appRedirect
 
 	return s, nil
 }

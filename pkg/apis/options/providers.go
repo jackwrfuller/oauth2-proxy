@@ -51,6 +51,8 @@ type Provider struct {
 	OIDCConfig OIDCOptions `json:"oidcConfig,omitempty"`
 	// LoginGovConfig holds all configurations for LoginGov provider.
 	LoginGovConfig LoginGovOptions `json:"loginGovConfig,omitempty"`
+	// LagoonConfig holds all configurations for a Lagoon OIDC Provider
+	LagoonConfig LagoonOptions `json:"lagoonConfig,omitempty"`
 
 	// ID should be a unique identifier for the provider.
 	// This value is required for all providers.
@@ -135,6 +137,9 @@ const (
 
 	// KeycloakOIDCProvider is the provider type for Keycloak OIDC
 	KeycloakOIDCProvider ProviderType = "keycloak-oidc"
+
+	// LagoonOIDCProvider is the provider type for Lagoon
+	LagoonOIDCProvider ProviderType = "lagoon-oidc"
 
 	// LinkedInProvider is the provider type for LinkedIn
 	LinkedInProvider ProviderType = "linkedin"
@@ -275,6 +280,11 @@ type LoginGovOptions struct {
 	JWTKeyFile string `json:"jwtKeyFile,omitempty"`
 	// PubJWKURL is the JWK pubkey access endpoint
 	PubJWKURL string `json:"pubjwkURL,omitempty"`
+}
+
+type LagoonOptions struct {
+	// Lagoon GraphQL authorization endpoint
+	AuthorizationEndpoint string `json:authorizationEndpoint,omitempty"`
 }
 
 func providerDefaults() Providers {
