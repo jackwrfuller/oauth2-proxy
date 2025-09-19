@@ -39,6 +39,8 @@ import (
 	"github.com/oauth2-proxy/oauth2-proxy/v7/pkg/sessions"
 	"github.com/oauth2-proxy/oauth2-proxy/v7/pkg/upstream"
 	"github.com/oauth2-proxy/oauth2-proxy/v7/providers"
+
+	lclient "github.com/uselagoon/machinery/api/lagoon/client"
 )
 
 const (
@@ -1150,6 +1152,7 @@ func authOnlyAuthorize(req *http.Request, s *sessionsapi.SessionState) bool {
 		checkAllowedGroups,
 		checkAllowedEmailDomains,
 		checkAllowedEmails,
+		checkLagoonPermissions,
 	}
 
 	for _, constraint := range constraints {
@@ -1177,6 +1180,46 @@ func extractAllowedEntities(req *http.Request, key string) map[string]struct{} {
 	}
 
 	return entities
+}
+
+func checkLagoonPermissions(req *http.Request, s *sessionsapi.SessionState) bool {
+	lagoonProject := extractAllowedEntities(req, "lagoon_environment")
+	if len(lagoonProject) == 0 {
+		return false
+	}
+
+	var project string
+	for p := range lagoonProject {
+		project = p
+		break
+	}
+
+	endpoint := os.Getenv("OAUTH2_PROXY_LAGOON_ENDPOINT")
+	if endpoint == "" {
+		logger.Errorf("Lagoon endpoint is not set")
+		return false
+	}
+
+	lc := lclient.New(
+		endpoint,
+		"lagoon-core-oauth2proxy",
+		"v2.27.0",
+		&s.AccessToken,
+		false,
+	)
+
+	access, err := lc.UserCanViewEnvironmentRoute(context.TODO(), project)
+	if err != nil {
+		logger.Error(err)
+		return false
+	}
+
+	if !access {
+		logger.Errorln("User does not have access to this route")
+		return false
+	}
+
+	return true
 }
 
 // checkAllowedEmailDomains allow email domain restrictions based on the `allowed_email_domains`
